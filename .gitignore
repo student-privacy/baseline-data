@@ -1,0 +1,12 @@
+*.Rproj
+*.Rproj.user
+*.Rhistory
+*.RData
+*.Ruserdata
+*.html
+*.json
+*.csv
+*.pdf
+*.txt
+notes.md
+/_targets/

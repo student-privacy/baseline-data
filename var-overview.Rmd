@@ -1,0 +1,175 @@
+---
+title: "Data Set Overview"
+author: "~CB"
+date: "`r format(Sys.time(), '%d. %B, %Y')`"
+output:
+  html_document:
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+## 1 Post data
+
+* 18 million posts to Facebook from public schools in the US
+
+### Potential post variables
+
+```{r}
+f <- 'json/2020-20.json'
+d <- jsonlite::fromJSON(f, simplifyDataFrame = TRUE, flatten = TRUE)$result$posts
+d %>% 
+  janitor::clean_names() %>% 
+  names()
+d %>% 
+  head(2) %>% 
+  knitr::kable()
+```
+
+### Currently sampled post-level variables:
+
+* post creation timestamp
+
+* post url
+
+* user_name / account identifier
+
+* nces_id to join school and district data
+  * whether school-level NCES data is available for post (ca. 5 out of 18 million)
+  * whether district-level NCES data is available for post (ca. 13 out of 18 million)
+
+* whether the post shares a **photo**
+
+* whether the post shares a **video**
+
+* whether the post shares a **link**
+
+### In addition: Considering media types
+
+```{r, cache=TRUE}
+
+# d <- targets::tar_read(json)
+# d %>% 
+#   select(media, type) %>% 
+#   unlist() %>% 
+#   table() %>% 
+#   sort() %>% 
+#   rev() %>% 
+#   saveRDS('var-overview_cache/media_overview.rds') # cache failed...
+
+readRDS('var-overview_cache/media_overview.rds') %>% 
+  knitr::kable()
+  
+# Example URLs
+# d %>% 
+#   filter(!duplicated(type)) %>% 
+#   select(type, post_url) %>% 
+#   arrange(type) %>% 
+#   saveRDS('var-overview_cache/media_exampled.rds') 
+  
+readRDS('var-overview_cache/media_exampled.rds') %>% 
+  knitr::kable()
+
+```
+
+## 2 NCES data
+
+* NCES data on public schools and districts, matched through extracting profile identifiers from URLs scraped from school webpages
+
+* N = 99,603 public schools
+  * 5,634 of which have school pages in Facebook post data
+    * many schools web pages seem to link to their district's Facebook page
+    * *but these few school pages are still responsible for around 25% of posts, ~ 5 million!*
+
+* N = 9,949 districts
+  * 8,112(!) of which are represented in Facebook post data, making up ~ 13 million out of 18 million posts
+  
+* Only 90,000 out of 18 million posts have neither NCES school nor NCES district data, but each page is linked
+*either* to a NCES school *or* NCES district
+
+### Potential variables
+
+```{r}
+
+d <- targets::tar_read(nces_all)
+
+# Schools
+
+d$schools %>% 
+  names()
+
+d$schools %>% 
+  head(3) %>% 
+  knitr::kable()
+
+# Districts
+
+d$districts %>% 
+  names()
+
+d$districts %>% 
+  head(3) %>% 
+  knitr::kable()
+
+```
+
+## 3 School and district level aggregates for descriptives and predictive modeling
+
+### Currently selected variables, aggregated variables, and descriptives
+
+```{r}
+
+all_numbers <- function(v) 
+  return(all(na.omit(str_detect(v, '[0-9\\.]'))))
+
+d <- targets::tar_read(agg_school)
+
+d %>% 
+  names()
+
+d %>% 
+  head(3) %>% 
+  knitr::kable()
+
+d %>% 
+  mutate_if(all_numbers, as.numeric) %>% 
+  skimr::skim()
+
+d <- targets::tar_read(agg_district)
+
+d %>% 
+  names()
+
+d %>% 
+  head(3) %>% 
+  knitr::kable()
+
+d %>% 
+  mutate_if(all_numbers, as.numeric) %>% 
+  skimr::skim()
+
+```
+
+
+## 4 Sampled data set including hand-coding
+
+* number of faces and number of identifiable faces of students, staff, and teachers
+
+* ... and many more!
+
+```{r}
+
+d <- targets::tar_read(sampled)
+
+all_numbers <- function(v) 
+  return(all(na.omit(str_detect(v, '[0-9\\.]'))))
+
+d %>% 
+  mutate_if(all_numbers, as.numeric) %>% 
+  skimr::skim()
+
+```
+
